@@ -1,0 +1,78 @@
+{% extends "hospitalApp/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+Hospital Home
+{% endblock title %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div class="container-fluid col-xl-8 col-12 m-5" style="background-color: lavender;">
+        <div class="row">
+            <h1 class="text-center">Ward List</h1>
+            <hr class="custom-hr"> <!-- Custom HR style -->
+            <div class="text-right mb-3 no-print">
+                <a href="{% url 'add_ward' %}" class="btn btn-primary">Add New Ward</a>
+                <a id="print-btn" href="{% url 'print_wards_report' %}" class="btn btn-secondary ml-2">Print Report</a>
+            </div>
+            <table id="ward-table" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col" style="font-weight: bold; color: black;">No.</th>
+                        <th scope="col" style="font-weight: bold; color: black;">Ward Name</th>
+                        <th scope="col" style="font-weight: bold; color: black;">Capacity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ward in wards %}
+                    <tr id="ward-{{ ward.id }}">
+                        <td scope="row">{{ ward.row_number }}</td>  <!-- Use the formatted row numbers -->
+                        <td>{{ ward.name }}</td>
+                        <td>{{ ward.capacity }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>         
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to update row numbers dynamically after deleting a ward
+    function updateRowNumbers() {
+        var table = document.getElementById('ward-table');
+        var rows = table.getElementsByTagName('tr');
+        for (var i = 1; i < rows.length; i++) {
+            var cells = rows[i].getElementsByTagName('td');
+            cells[0].innerText = i; // Update the row number, starting from 1 instead of 0
+        }
+    }
+
+    // Add event listener to the Print Report button
+    document.getElementById('print-btn').addEventListener('click', function() {
+        updateRowNumbers(); // Update row numbers before printing
+        window.print(); // Trigger printing after updating row numbers
+    });
+
+    // Update row numbers when the page is fully loaded
+    window.onload = function() {
+        updateRowNumbers();
+    };
+</script>
+
+<style>
+    @media print {
+        .no-print {
+            display: none;
+        }
+    }
+</style>
+
+{% endblock content %}

@@ -1,0 +1,66 @@
+{% extends "hospitalApp/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+Hospital Home
+{% endblock title %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block content %}
+<style>
+  .counter-cell::before {
+    counter-increment: myCounter;
+    content: counter(myCounter);
+  }
+</style>
+
+<div class="d-flex justify-content-center">
+  <div class="container-fluid col-xl-8 col-12 m-5" style="background-color: lavender;">
+    <div class="row">
+      <h1 class="text-center">Booking Patient Report</h1>
+      <hr class="custom-hr"> <!-- Custom HR style -->
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th style="color: black; font-weight: bold;">No.</th>
+              <th style="color: black; font-weight: bold;">Booking ID</th>
+              <th style="color: black; font-weight: bold;">User Name</th>
+              <th style="color: black; font-weight: bold;">User Type</th>
+              <th style="color: black; font-weight: bold;">Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td class="counter-cell"></td>  <!-- Adds numbering using CSS counter -->
+              <td>{{ user.id }}</td>
+              <td>{{ user.userID.username }}</td>
+              <td>{{ user.userID.user_Type }}</td>
+              <td>
+                <a href="#" onclick="downloadPDF('{{ user.id }}')" class="btn btn-primary">Download PDF</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function downloadPDF(userID) {
+    let pdfURL = `/generate_pdf_view/${userID}/`;  // Updated URL pattern for PDF generation
+    window.open(pdfURL, '_blank');
+  }
+</script>
+
+{% endblock content %}

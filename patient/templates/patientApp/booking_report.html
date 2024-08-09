@@ -1,0 +1,54 @@
+{% extends "patientApp/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+Patient Home
+{% endblock title %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'patientApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block content %}
+
+<!-- Link to the external CSS file -->
+
+
+<div class="d-flex justify-content-center">
+  <div class="container-fluid col-xl-6 col-12 m-5" style="background-color: violet;">
+    <div class="row">
+      <h1>Booking Patient Report</h1>
+      <hr class="custom-hr"> <!-- Custom HR style -->
+
+      <div>
+        <ol>
+          {% for booking in bookings %}
+          <li>
+            Booking ID: {{ booking.id }}<br>
+            Patient: {{ booking.patient }}<br>
+            State: {{ booking.get_state_display }}<br>
+            Lists: {{ booking.lists }}<br>
+            Created At: {{ booking.created_at }}<br>
+            Appointment Date: {{ booking.appointmentDate }}<br>
+
+            <!-- Add download PDF button -->
+            <a href="#" onclick="downloadPDF('{{ booking.id }}')">Download PDF</a>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function downloadPDF(bookingID) {
+    let pdfURL = `/generate_pdf/${bookingID}/`;
+    window.open(pdfURL, '_blank');
+  }
+</script>
+
+{% endblock content %}

@@ -1,0 +1,53 @@
+{% extends "hospitalApp/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+Add Beds to Ward
+{% endblock title %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block content %}
+
+<div class="container mt-3">
+    <h2>Add Bed to {{ ward.name }}</h2>
+    <form method="post" action="{% url 'add-beds-to-ward' ward.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="bed_number">Bed Number:</label>
+            <input type="text" class="form-control" id="bed_number" name="bed_number" required>
+        </div>
+        <button type="submit" name="add_bed" class="btn btn-primary">Add Bed</button>
+    </form>
+
+    <h2 class="mt-5">Existing Beds in {{ ward.name }}</h2>
+    <form method="post" action="{% url 'add-beds-to-ward' ward.id %}">
+        {% csrf_token %}
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Bed Number</th>
+                    <th>State</th>
+                    <th>Select for Deletion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bed in beds %}
+                <tr>
+                    <td>{{ bed.bed_number }}</td>
+                    <td>{% if bed.bookings.exists %} {{ bed.bookings.first.state }} {% else %} Vacant {% endif %}</td>
+                    <td>
+                        <input type="checkbox" name="delete_beds" value="{{ bed.id }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" name="delete_beds" class="btn btn-danger">Delete Selected Beds</button>
+    </form>
+</div>
+{% endblock content %}

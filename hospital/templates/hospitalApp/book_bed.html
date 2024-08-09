@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+{% block content %}
+
+<div class="container">
+    <h2>Book a Bed</h2>
+    <form id="bookingForm" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_hospital">Hospital:</label>
+            {{ form.hospital }}
+        </div>
+        <div class="form-group">
+            <label for="id_ward">Ward:</label>
+            {{ form.ward }}
+        </div>
+        <div class="form-group">
+            <label for="id_bed">Bed:</label>
+            {{ form.bed }}
+        </div>
+        <div id="patient-table-container" class="table-responsive">
+            {% include 'hospitalApp/partial_patient_table.html' %}
+        </div>
+        <div class="form-group">
+            <label for="id_state">Status:</label>
+            {{ form.state }}
+        </div>
+        <button type="submit" class="btn btn-primary">Book Bed</button>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#id_hospital').change(function() {
+            var hospitalId = $(this).val();
+            if (hospitalId) {
+                $.ajax({
+                    url: '{% url "ajax_load_wards" %}',
+                    data: {'hospital_id': hospitalId},
+                    success: function(response) {
+                        var wardOptions = '<option value="">Select Ward</option>';
+                        response.options.forEach(function(option) {
+                            wardOptions += '<option value="' + option.id + '">' + option.name + '</option>';
+                        });
+                        $('#id_ward').html(wardOptions);
+                        $('#id_bed').html('<option value="">Select Bed</option>');
+                        $('#id_patient').html('<option value="">Select Patient</option>');
+                        $('#patient-table-container').html('<p>No patients found.</p>');
+                    }
+                });
+            } else {
+                $('#id_ward').html('<option value="">Select Ward</option>');
+                $('#id_bed').html('<option value="">Select Bed</option>');
+                $('#id_patient').html('<option value="">Select Patient</option>');
+                $('#patient-table-container').html('<p>No patients found.</p>');
+            }
+        });
+
+        $('#id_ward').change(function() {
+            var wardId = $(this).val();
+            if (wardId) {
+                $.ajax({
+                    url: '{% url "ajax_load_beds" %}',
+                    data: {'ward_id': wardId},
+                    success: function(response) {
+                        var bedOptions = '<option value="">Select Bed</option>';
+                        response.options.forEach(function(option) {
+                            bedOptions += '<option value="' + option.id + '">' + option.id + '</option>';
+                        });
+                        $('#id_bed').html(bedOptions);
+                    }
+                });
+
+                $.ajax({
+                    url: '{% url "ajax_load_patients" %}',
+                    data: {'ward_id': wardId},
+                    success: function(response) {
+                        var patientOptions = '<option value="">Select Patient</option>';
+                        response.options.forEach(function(option) {
+                            patientOptions += '<option value="' + option.id + '">' + option.name + '</option>';
+                        });
+                        $('#id_patient').html(patientOptions);
+
+                        // Update the patients table
+                        $.ajax({
+                            url: window.location.pathname,
+                            type: 'get',
+                            data: {'ward': wardId},
+                            success: function(response) {
+                                var tempDom = $('<div>').append($.parseHTML(response));
+                                var patientsTable = tempDom.find('#patient-table-container').html();
+                                $('#patient-table-container').html(patientsTable);
+                            }
+                        });
+                    }
+                });
+            } else {
+                $('#id_bed').html('<option value="">Select Bed</option>');
+                $('#id_patient').html('<option value="">Select Patient</option>');
+                $('#patient-table-container').html('<p>No patients found.</p>');
+            }
+        });
+    });
+</script>
+{% endblock %}
