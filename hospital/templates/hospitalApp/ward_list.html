@@ -1,0 +1,134 @@
+{% extends "hospitalApp/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+Hospital Home
+{% endblock title %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div class="container-fluid col-xl-8 col-12 m-5" style="background-color: lavender;">
+        <div class="row">
+            <h1 class="text-center">Ward List</h1>
+            <hr class="custom-hr"> <!-- Custom HR style -->
+            <table id="ward-table" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col" style="font-weight: bold; color: black;">No.</th>
+                        <th scope="col" style="font-weight: bold; color: black;">Ward Name</th>
+                        <th scope="col" style="font-weight: bold; color: black;">Capacity</th>
+                        <th scope="col" style="font-weight: bold; color: black;">Hospital</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ward in wards %}
+                    <tr id="ward-{{ ward.id }}">
+                        <td scope="row">{{ forloop.counter }}</td>
+                        <td>{{ ward.name }}</td>
+                        <td>{{ ward.capacity }}</td>
+                        <td id="hospital-{{ ward.hospital_id }}">
+                            {% if ward.hospital %}
+                                {{ ward.hospital.name }}
+                            {% else %}
+                                Not Assigned
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No wards found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>  
+            <div class="text-right mb-3 no-print">
+                <button id="print-wards-btn" class="btn btn-secondary ml-2">Print Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Hospital Selection -->
+<div class="modal fade" id="assignHospitalModal" tabindex="-1" role="dialog" aria-labelledby="assignHospitalModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignHospitalModalLabel">Assign Ward to Hospital</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="assignHospitalForm" method="post" action="{% url 'assign_ward_to_hospital' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="ward_id" id="wardIdField">
+                    <div class="form-group">
+                        <label for="hospitalSelect">Choose Hospital:</label>
+                        <select class="form-control" id="hospitalSelect" name="hospital">
+                            <option value="" selected disabled>Choose Hospital</option>
+                            {% for hospital in hospitals %}
+                                <option value="{{ hospital.id }}">{{ hospital.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to update row numbers dynamically after deleting a ward
+    function updateRowNumbers() {
+        var table = document.getElementById('ward-table');
+        var rows = table.getElementsByTagName('tr');
+        for (var i = 1; i < rows.length; i++) {
+            var cells = rows[i].getElementsByTagName('td');
+            cells[0].innerText = i; // Update the row number, starting from 1 instead of 0
+        }
+    }
+
+    // Add event listener to the Print Report button
+    document.getElementById('print-wards-btn').addEventListener('click', function() {
+        updateRowNumbers(); // Update row numbers before printing
+        window.print(); // Trigger printing after updating row numbers
+    });
+
+    // Update row numbers when the page is fully loaded
+    window.onload = function() {
+        updateRowNumbers();
+    };
+
+    // Function to open modal for assigning ward to hospital
+    function assignWardToHospital(wardId) {
+        document.getElementById('wardIdField').value = wardId;
+        $('#assignHospitalModal').modal('show');
+    }
+
+    // Handle modal dismissal (Cancel button and "x" button)
+    $('#assignHospitalModal').on('hidden.bs.modal', function (e) {
+        document.getElementById('wardIdField').value = ''; // Reset wardIdField if necessary
+        document.getElementById('hospitalSelect').selectedIndex = 0; // Reset hospitalSelect to default option
+    });
+</script>
+
+<style>
+    @media print {
+        .no-print {
+            display: none;
+        }
+    }
+</style>
+
+{% endblock content %}

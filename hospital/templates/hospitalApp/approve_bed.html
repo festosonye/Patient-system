@@ -1,0 +1,13 @@
+<!-- hospitalApp/approve_bed.html -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Approve Bed Reservation</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary mt-3">Approve Reservation</button>
+        </form>
+    </div>
+</div>

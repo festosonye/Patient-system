@@ -1,0 +1,451 @@
+{% extends "hospitalApp/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+Hospital Home
+{% endblock title %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block scripts %}
+
+<script>
+function deleteSelectedWards() {
+    var form = document.getElementById("deleteWardsForm");
+    form.action = "{% url 'delete_selected_wards' hospital_id=hospital.id %}";
+    form.submit();
+}
+
+function moveSelectedWards() {
+    var form = document.getElementById("assignWardsForm");
+    var selectedWards = form.querySelectorAll('input[name="wards"]:checked');
+    
+    // Check if any selected ward is already assigned
+    for (var i = 0; i < selectedWards.length; i++) {
+        var wardId = selectedWards[i].value;
+        var alreadyAssigned = false;
+        
+        // Iterate through currently assigned wards
+        {% for ward in hospital.wards.all %}
+            if (wardId == {{ ward.id }}) {
+                alreadyAssigned = true;
+                break;
+            }
+        {% endfor %}
+        
+        if (alreadyAssigned) {
+            // Handle already assigned ward scenario (e.g., show an alert)
+            alert('Ward is already assigned to this hospital!');
+            return;
+        }
+    }
+    
+    // If no wards are already assigned, submit the form
+    form.action = "{% url 'assign_wards' hospital_id=hospital.id %}";
+    form.submit();
+}
+
+function printAssignedWards() {
+    var printContents = document.getElementById("assignedWardsSection").innerHTML;
+    var originalContents = document.body.innerHTML;
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+}
+</script>
+
+<style>
+/* Hide buttons and actions column during printing */
+@media print {
+    .no-print,
+    .actions-column {
+        display: none;
+    }
+
+    /* Adjust print layout for better readability */
+    body {
+        padding: 10px;
+    }
+
+    /* Ensure tables and lists are not cut off */
+    table,
+    ul,
+    ol {
+        page-break-inside: avoid;
+    }
+
+    /* Hide selection checkboxes */
+    .hide-checkbox input[type="checkbox"] {
+        display: none;
+    }
+
+    /* Hide "Select for Deletion" column during printing */
+    .hide-deletion-column,
+    .hide-deletion-column th,
+    .hide-deletion-column td {
+        display: none !important;
+    }
+}
+</style>
+{% endblock scripts %}
+
+{% block content %}
+<!-- main div for center align -->
+<div class="d-flex justify-content-center">
+    <div class="container-fluid col-xl-10 col-12 m-5" style="background-color: white">
+        <!-- hospital Heading -->
+        <div class="row">
+            <!-- Active Hospitals -->
+            <div class="bg-success p-5  no-print" style="text-align: center">
+                <h3 style="color: rgb(255, 255, 255) !important">
+                    {{ hospital.name }} ({{ hospital.hos_type }})
+                </h3>
+            </div>
+
+            <!-- Active Doctors -->
+            <div class="bg-light container mt-3 p-3 no-print" style="border: black 2px solid">
+                <div class="row text-center d-flex justify-content-center">
+                    <div class="card text-bg-warning m-1 col-12">
+                        <div class="card-header">Active Doctors</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center">
+                                <b>{{ activedoctorNo }}</b>
+                            </h1>
+                            <a href="{% url 'addDoctor' hospital.id %}">Add New Doctor <i class="bi bi-person-plus"></i></a>
+                            <div class="card-text">
+                                <table id="HosdoctorListTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Doctor Name</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for m in doctorData %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ m.doctorName }}</td>
+                                            <td>
+                                                {% if m.is_active %}
+                                                <div class="form-check form-switch">
+                                                    <label class="form-check-label"
+                                                        for="changeStatusBtn{{ forloop.counter }}">Active</label>
+                                                    <input class="form-check-input" type="checkbox" role="switch"
+                                                        id="changeStatusBtn{{ forloop.counter }}"
+                                                        value="{{ m.doctorlistToken }}" checked
+                                                        onchange="changeStatusdoc(this.id)">
+                                                </div>
+                                                {% else %}
+                                                <div class="form-check form-switch">
+                                                    <label class="form-check-label"
+                                                        for="changeStatusBtn{{ forloop.counter }}">Inactive</label>
+                                                    <input class="form-check-input" type="checkbox" role="switch"
+                                                        id="changeStatusBtn{{ forloop.counter }}"
+                                                        value="{{ m.doctorlistToken }}" onchange="changeStatusdoc(this.id)">
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <form>
+                                                    <button class="btn btn-primary" formaction="#">View</button>
+                                                    <button class="btn btn-danger" formaction="#">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card text-bg-primary m-1 col-3">
+                        <div class="card-header">Completed Bookings</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center"><b>{{ COMPLETEDVS }}</b></h1>
+                            <p class="card-text">This is the list of completed booking of all doctors in the
+                                hospital</p>
+                        </div>
+                    </div>
+
+                    <div class="card text-bg-danger m-1 col-3">
+                        <div class="card-header">Pending Bookings</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center"><b>{{ PENDINGVS }}</b></h1>
+                            <p class="card-text">This is the list of Pending booking of all doctors in the
+                                hospital</p>
+                        </div>
+                    </div>
+
+                    <div class="card text-bg-secondary m-1 col-3">
+                        <div class="card-header">Canceled Bookings</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center"><b>{{ DELETEDVS }}</b></h1>
+                            <p class="card-text">This is the list of Deleted booking of all doctors in the
+                                hospital.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assigned Wards Section -->
+            <div id="assignedWardsSection" class="bg-light container mt-3 p-3" style="border: black 2px solid;">
+                <h2>Assigned Wards</h2>
+                <div class="table-responsive">
+                    <form id="deleteWardsForm" method="post">
+                        {% csrf_token %}
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col" style="font-weight: bold; color: black;">No.</th>
+                                    <th scope="col" style="font-weight: bold; color: black;">Ward Name</th>
+                                    <th scope="col" style="font-weight: bold; color: black;">Capacity</th>
+                                    <th scope="col" style="font-weight: bold; color: black;">Occupied Beds</th>
+                                    <th scope="col" style="font-weight: bold; color: black;">Remaining Beds</th>
+                                    <th scope="col" style="font-weight: bold; color: black;">Beds</th>
+                                    <th scope="col" style="font-weight: bold; color: black;" class="hide-deletion-column">Select for Deletion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ward in hospital.wards.all %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ ward.name }}</td>
+                                    <td>{{ ward.capacity }}</td>
+                                    <td>{{ ward.get_occupied_beds }}</td>
+                                    <td>{{ ward.beds_remaining }}</td>
+                                    <td>
+                                        {% for bed in ward.beds.all %}
+                                        <div>
+                                            <input type="checkbox" name="delete_beds" value="{{ bed.id }}" id="deleteBed{{ bed.id }}">
+                                            <label for="deleteBed{{ bed.id }}">Bed {{ bed.bed_number }}:</label>
+                                            {% if bed.bookings.exists %}
+                                                {{ bed.bookings.first.state }}
+                                            {% else %}
+                                                Vacant
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                    </td>
+                                    <td class="hide-deletion-column">
+                                        <div class="form-check">
+                                            <input class="form-check-input no-print" type="checkbox" name="delete_wards" value="{{ ward.id }}" id="deleteWard{{ ward.id }}">
+                                            <label class="form-check-label no-print" for="deleteWard{{ ward.id }}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </form>
+            
+                </div>
+                <div class="d-flex align-items-center">
+                    <!-- Delete Selected Wards Button -->
+                    <button type="button" class="btn btn-danger no-print mr-2" onclick="deleteSelectedWards()">Delete Selected Wards</button>
+                    
+                    <!-- Delete Selected Beds Form -->
+                    <form id="deleteBedsForm" method="post" action="{% url 'delete_selected_beds' %}" class="mr-2">
+                        {% csrf_token %}
+                        <!-- Delete Selected Beds Button -->
+                        <button type="button" class="btn btn-danger no-print" onclick="deleteSelectedBeds()">Delete Selected Beds</button>
+                    </form>
+                    
+                    <!-- Patient List Button -->
+                    <a href="{% url 'patient_list' %}" class="btn btn-secondary ml-2 no-print">Patient List</a>
+                    
+                    <!-- Print Assigned Wards Button -->
+                    <button type="button" class="btn btn-secondary no-print" onclick="printAssignedWards()">Print Assigned Wards</button>
+                    
+                    {% if hospital %}
+                        {% for hospital in hospitals %}
+                            {% for ward in hospital.wards.all %}
+                                <a href="{% url 'add-bed-to-ward' ward_id=ward.id %}" class="btn btn-primary ml-2 no-print" style="text-decoration: none;">
+                                    Add Bed to Ward <i class="bi bi-folder-plus"></i>
+                                </a>
+                            {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <p>No hospital data available.</p>
+                    {% endif %}
+                </div>
+                
+            </div>
+                
+            
+            <div class="bg-light container mt-3 p-3 no-print" style="border: black 2px solid;">
+                <div>
+                    <form id="assignWardsForm" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="wards">Select Wards:</label>
+                            <div id="wardsList">
+                                <!-- Wards will be dynamically populated here -->
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary no-print" onclick="moveSelectedWards()">Assign Wards</button>
+                        {% if error_message %}
+                            <div class="alert alert-danger mt-3">{{ error_message }}</div>
+                        {% endif %}
+                        {% if remaining_beds is not None %}
+                            <p>Remaining Beds: {{ remaining_beds }}</p>
+                        {% endif %}
+                    </form>                
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+<script>
+    function deleteSelectedBeds() {
+        var bedIds = [];
+        var checkboxes = document.getElementsByName('delete_beds');
+        checkboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                bedIds.push(checkbox.value);
+            }
+        });
+    
+        // Send an AJAX request to delete the selected beds
+        fetch('/delete_selected_beds/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ bed_ids: bedIds })
+        })
+        .then(response => {
+            if (response.ok) {
+                // Handle success, maybe refresh the page or update UI
+                window.location.reload();
+            } else {
+                // Handle error
+                console.error('Error deleting beds');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    
+    // Function to retrieve CSRF token from cookies
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    </script>
+    
+
+<script>
+    
+    window.onload = function() {
+        var form = document.getElementById("assignWardsForm");
+        var wardsList = document.getElementById("wardsList");
+    
+        // Fetch all wards from Django template context
+        var allWards = [
+            {% for ward in all_wards %}
+                {
+                    id: {{ ward.id }},
+                    name: "{{ ward.name }}",
+                    capacity: {{ ward.capacity }},
+                    occupiedBeds: {{ ward.get_occupied_beds }},
+                    remainingBeds: {{ ward.beds_remaining }}
+                },
+            {% endfor %}
+        ];
+    
+        // Fetch already assigned ward IDs from Django template context
+        var assignedWardIds = [
+            {% for ward in hospital.wards.all %}
+                {{ ward.id }},
+            {% endfor %}
+        ];
+    
+        // Function to filter wards and generate HTML for checkboxes
+        function populateWardsList() {
+            wardsList.innerHTML = ''; // Clear existing content
+    
+            allWards.forEach(function(ward) {
+                // Check if ward is already assigned or other conditions
+                if (!assignedWardIds.includes(ward.id)) {
+                    var checkboxDiv = document.createElement('div');
+                    checkboxDiv.classList.add('form-check');
+    
+                    var input = document.createElement('input');
+                    input.classList.add('form-check-input');
+                    input.setAttribute('type', 'checkbox');
+                    input.setAttribute('name', 'wards');
+                    input.setAttribute('value', ward.id);
+                    input.setAttribute('id', 'ward' + ward.id);
+    
+                    var label = document.createElement('label');
+                    label.classList.add('form-check-label');
+                    label.setAttribute('for', 'ward' + ward.id);
+                    label.textContent = ward.name + ' (Capacity: ' + ward.capacity +
+                                        ', Occupied: ' + ward.occupiedBeds +
+                                        ', Remaining: ' + ward.remainingBeds + ')';
+    
+                    checkboxDiv.appendChild(input);
+                    checkboxDiv.appendChild(label);
+                    wardsList.appendChild(checkboxDiv);
+                }
+            });
+        }
+    
+        // Populate wards list on page load
+        populateWardsList();
+    
+        // Function to handle form submission
+        function moveSelectedWards() {
+            var selectedWards = form.querySelectorAll('input[name="wards"]:checked');
+            
+            // Check if any selected ward is already assigned
+            for (var i = 0; i < selectedWards.length; i++) {
+                var wardId = selectedWards[i].value;
+                if (assignedWardIds.includes(parseInt(wardId))) {
+                    // Handle already assigned ward scenario (e.g., show an alert)
+                    alert('Ward is already assigned to this hospital!');
+                    return;
+                }
+            }
+            
+            // If no wards are already assigned, submit the form
+            form.submit();
+        }
+    };
+
+
+    var allWards = [
+            {% for ward in hospital.wards.all %}
+            {
+                id: {{ ward.id }},
+                name: "{{ ward.name }}",
+                capacity: {{ ward.capacity }},
+                occupiedBeds: {{ ward.get_occupied_beds }},
+                remainingBeds: {{ ward.beds_remaining }}
+            },
+            {% endfor %}
+        ];
+        console.log(allWards); // Check the data structure in the console
+    </script>
+
+{% endblock content %}

@@ -1,0 +1,4 @@
+<option value="">Select Patient</option>
+{% for patient in patients %}
+<option value="{{ patient.id }}">{{ patient.user.username }}</option>
+{% endfor %}

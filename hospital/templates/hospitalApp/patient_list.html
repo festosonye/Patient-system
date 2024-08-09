@@ -1,0 +1,75 @@
+{% extends "hospitalApp/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+Hospital Home
+{% endblock title %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div class="container-fluid col-xl-8 col-12 m-5" style="background-color: lavender;">
+        <div class="row">
+            <h1 class="text-center">Patient List</h1>
+            <hr class="custom-hr"> <!-- Custom HR style -->
+
+            <div class="table-responsive">
+                {% if patients %}
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th style="color: black; font-weight: bold;">No.</th>
+                            <th style="color: black; font-weight: bold;">Patient UHID</th>
+                            <th style="color: black; font-weight: bold;">User Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>  <!-- Use the built-in forloop.counter for row number -->
+                            <td>{{ patient.patient_uhid }}</td>
+                            <td>{{ patient.userID__username }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No patients found.</p>
+                {% endif %}
+            </div>
+
+            <div class="text-right mb-3 no-print">
+                <button id="print-patients-btn" class="btn btn-secondary">Print Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('print-patients-btn').addEventListener('click', function() {
+        window.print(); // Trigger printing when the button is clicked
+    });
+
+    function resetForm() {
+        // Reset the search form
+        document.getElementById('searchForm').reset();
+        // Navigate to the same page without any search parameters
+        window.location.href = window.location.pathname;
+    }
+</script>
+
+<style>
+    @media print {
+        .no-print {
+            display: none;
+        }
+    }
+</style>
+
+{% endblock content %}

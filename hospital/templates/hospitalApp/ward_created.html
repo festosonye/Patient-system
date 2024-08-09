@@ -1,0 +1,109 @@
+{% extends "hospitalApp/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+Hospital Details
+{% endblock title %}
+
+{% block scripts %}
+<script src="{% static 'hospitalApp/js/hospitalDetails.js' %}"></script>   
+{% endblock scripts %}
+
+{% block navbar %}
+<section id="navbar">
+    {% include 'hospitalApp/navbar.html' %}
+</section>
+{% endblock navbar %}
+
+{% block content %}
+<!-- main div for center align -->
+<div class="d-flex justify-content-center">
+  <div class="container-fluid col-xl-10 col-12 m-5" style="background-color: white;">
+    <!-- hospital Heading -->
+    <div class="row">
+      <div class="bg-success p-5" style="text-align: center;">
+        <h3 style="color: rgb(255, 255, 255) !important;">
+          {{ hospital.name }} ({{ hospital.hos_type }})
+        </h3>
+      </div>
+
+      <!-- Active Doctors -->
+      <div class="bg-light container mt-3 p-3" style="border: black 2px solid;">
+        <div class="row text-center d-flex justify-content-center">
+          <!-- Your existing doctor card content -->
+
+          <!-- Bookings Cards -->
+          <div class="card text-bg-primary m-1 col-3">
+            <div class="card-header">Completed Bookings</div>
+            <div class="card-body">
+              <h1 class="card-title text-center"><b>{{ COMPLETEDVS }}</b></h1>
+              <p class="card-text">This is the list of completed booking of all doctors in the hospital</p>
+            </div>
+          </div>
+
+          <!-- Add Pending and Deleted Bookings Cards -->
+
+        </div>
+      </div>
+
+      <!-- Assigned Wards Section -->
+      <div class="bg-light container mt-3 p-3" style="border: black 2px solid;">
+        <h2>Assigned Wards</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Ward Name</th>
+                        <th>Capacity</th>
+                        <th>Occupied Beds</th>
+                        <th>Remaining Beds</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ward in hospital.wards.all %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ ward.name }}</td>
+                        <td>{{ ward.capacity }}</td>
+                        <td>{{ ward.get_occupied_beds }}</td>
+                        <td>{{ ward.beds_remaining }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+      </div>
+
+      <!-- Wards Section -->
+      <div class="bg-light container mt-3 p-3" style="border: black 2px solid;">
+        <h2>Assign Wards</h2>
+        <form method="post" action="{% url 'assign_wards' hospital_id=hospital.id %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="wards">Select Wards:</label>
+            <div>
+              {% for ward in all_wards %}
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="wards" value="{{ ward.id }}" id="ward{{ ward.id }}" {% if ward in hospital.wards.all %}checked{% endif %}>
+                  <label class="form-check-label" for="ward{{ ward.id }}">
+                    {{ ward.name }} (Capacity: {{ ward.capacity }}, Occupied: {{ ward.get_occupied_beds }}, Remaining: {{ ward.beds_remaining }})
+                  </label>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Assign Wards</button>
+          {% if error_message %}
+            <div class="alert alert-danger mt-3">{{ error_message }}</div>
+          {% endif %}
+          {% if remaining_beds is not None %}
+            <p>Remaining Beds: {{ remaining_beds }}</p>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

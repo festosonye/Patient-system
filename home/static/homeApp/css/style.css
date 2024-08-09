@@ -1,0 +1,16 @@
+.colortes{
+    color: red;
+}
+
+.cardbtncolor{
+    background-color: #42a8a6;
+    color: white;
+    font-weight: 600;
+}
+
+.custom-hr {
+    height: 12px;
+    width: 100%;
+    background-color: rgb(8, 3, 59);
+    border: none;
+}
